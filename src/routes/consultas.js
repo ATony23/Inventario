@@ -7,21 +7,13 @@ const path = require('path');
 
 //If it works
 app.get('/', async(req, res) => {
-    console.log('Hola');
-    res.status(200).json({"success": true, "message": "todo ok"});
-});
-
-//Ruta prueba
-app.get('/prueba', async(req, res) => {
-
     res.status(200).json({"success": true, "message": "todo ok"});
 });
 
 
 
-
-//This show * object table
-app.post('/showObject', async(req, res) => { 
+//Get all objects from object table
+app.post('/getObject', async(req, res) => { 
 
     const query = `SELECT * FROM object`;
 
@@ -36,45 +28,155 @@ app.post('/showObject', async(req, res) => {
 
 
 
-//Creación de usuario con contraseña encriptada
-app.post('/userRegister', async(req, res) => {
-    
-    let hashedPassword = await hashPassword(req.body.password);
+
+
+// Get an object from object table by id
+app.get('/getObject/:id', (req, res) => {
+  const { id } = req.params; 
+  mysqlConnection.query('SELECT * FROM object WHERE id = ?', [id], (err, rows, fields) => {
+    if (!err) {
+      res.status(200).send(rows);
+    } else {
+      res.status(500).send('Something gone wrong');
+    }
+  });
+});
+
+
+
+
+
+//Add object to the database
+app.post('/addObject', async(req, res) => {
     var data = {
         name: req.body.name,
-        username: req.body.username,
-        password: hashedPassword,
-        phone: req.body.phone,
-        email: req.body.email,
-        id_gender: req.body.id_gender,
-        id_user_type: req.body.id_user_type,
-        id_superior: req.body.id_superior,
-        creation_date: dateFunction()
+        product_feature: req.body.product_feature,
+        stock: req.body.stock,
+        idBrand: req.body.idBrand,
+        idCategory: req.body.idCategory,
+        idZone: req.body.idZone
     }   
 
-    for (var i = 0; i < badPassword.length; i++) {
+    var sql = 'INSERT INTO object SET ?'
 
-        if (req.body.password != badPassword[i]) {
+        mysqlConnection.query(sql, data, (err, rows) => {
 
-            var sql = 'INSERT INTO users SET ?'
+        if(!err) {
 
-             mysqlConnection.query(sql, data, (err, rows) => {
-                if (!err) {
-                    const data = {
-                    status: 'success',
-                    message: 'usuario registrado'
-                    }
-                    res.status(200).json({"success": true, "message": "todo ok", "data": data});
-                } else {
-                    console.log(err);
+        res.status(200).send(rows);
+        }  else {
+
+        res.status(500).send('Something gone wrong');
+        }
+    });
+});
+
+
+
+
+
+//Add or quit one more object to object table by location
+app.post('/addObject/:idZone/:id/:a', async(req, res) => {
+    const { idZone, id, a } = req.params; 
+
+
+    if (req.params.a === ('+' || '-')) {
+
+            if (req.params.a == '+') {
+
+                var sql = `UPDATE object
+                       SET stock = (stock + 1)
+                       WHERE idZone = ? && id = ?;`
+
+                mysqlConnection.query(sql, [idZone, id, a], (err, rows) => {
+
+               if(!err) {
+
+               res.status(200).send(rows);
+                }  else {
+
+               res.status(500).send('Something gone wrong');
                 }
             });
-        } else {
-            res.status(500).send('Error, contraseña demasiado débil');
-        }
 
-    } 
+         } else {
+                var sql = `UPDATE object
+                       SET stock = (stock - 1)
+                       WHERE idZone = ? && id = ?;`
+
+                mysqlConnection.query(sql, [iZona, id, a], (err, rows) => {
+
+               if(!err) {
+
+               res.status(200).send(rows);
+                }  else {
+
+               res.status(500).send('Something gone wrong');
+                }
+            });
+        }
+    } else {
+        res.status(500).send('You must insert only + or - characters');
+    }
+
 });
+
+
+
+
+//edit an object by id
+app.post('/editObject/:id', async(req, res) => {
+    var data = {
+        name: req.body.name,
+        product_feature: req.body.product_feature,
+        stock: req.body.stock,
+        idBrand: req.body.idBrand,
+        idCategory: req.body.idCategory,
+        idZone: req.body.idZone
+    }
+
+    var { id } = req.params;   
+
+    var sql = `UPDATE object
+               SET ?
+               WHERE id = ?`
+
+        mysqlConnection.query(sql, [data, id], (err, rows) => {
+
+        if(!err) {
+
+        res.status(200).send("All good");
+        }  else {
+
+        res.status(500).send('Something gone wrong');
+        }
+    });
+});
+
+
+
+
+
+//delete an object by id
+app.delete('/deleteObject/:id', async(req, res) => {
+    var { id } = req.params;   
+
+    var sql = `DELETE FROM object
+               WHERE id = ?`
+
+        mysqlConnection.query(sql, id, (err, rows) => {
+
+        if(!err) {
+
+        res.status(200).send("Object deleted successfully");
+        }  else {
+
+        res.status(500).send('Something gone wrong');
+        }
+    });
+});
+
+
 
 
 module.exports = app;
