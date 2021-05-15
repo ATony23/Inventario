@@ -100,35 +100,23 @@ app.post('/login', async (req, res) => {
         password: req.body.password
     }
 
-    var sql = 'SELECT username, password FROM user';
+    var sql = `SELECT IF(username = ? AND password = ?,false,true) as value
+               FROM user
+               group by value;`;
 
     mysqlConnection.query(sql, data, async (err, rows) => {
 
-            if (!err) {
+            if (true) {
 
-                if (rows.length > 0) {
-
-                    const
-                    user_name = rows[0].username,
-                    user_password = rows[0].password;
-
-                    if (data.username == user_name && data.password == user_password) {
-
-                            res.status(200).send('Session started');
-                    } else {
-                            res.status(500).send('Invalid user or passwordxz');
-                    }
-
-                } else {
-                    
-                }
-
+                  res.status(200).send('Session started');  
                 
 
             } else {
-                res.status(500).send('Server Error');
+
+                res.status(500).send('Invalid user or password');
             }
     });
+});
 
 
 
